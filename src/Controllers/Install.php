@@ -13,7 +13,8 @@
 namespace Sssm\Install\Controllers;
 
 use Exception;
-use Sssm\Controllers\UserBaseController;
+use Sssm\Base\Controllers\UserBaseController;
+use Sssm\Install\Models\SystemInit;
 
 class Install extends UserBaseController{
     
