@@ -11,6 +11,7 @@
  */
 
 $routes->group('', ['namespace' => 'Sssm\Install\Controllers'], function($routes) {
-    $routes->get('install', 'Install::index');
-    $routes->get('install/(:any)', 'Install::$1');
+    $routes->add('Install', 'Install::index');
+    $routes->add('Install/(:any)', 'Install::$1');
 });
+
