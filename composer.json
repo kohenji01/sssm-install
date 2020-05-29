@@ -12,7 +12,7 @@
     "require": {
         "php": ">=7.2",
         "codeigniter4/framework": "^4",
-        "codeigniter4/translations": "^4@rc",
+        "codeigniter4/translations": "dev-develop",
         "smarty/smarty": "3.1.*",
         "smarty-gettext/smarty-gettext": "^1.6",
         "sarah-systems/ci4smarty": "*",

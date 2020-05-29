@@ -25,7 +25,7 @@ class SystemInit extends Model{
     
     private $checkEnvFiles = [];
     
-    protected $validationRulesEnv = [
+    private $validationRulesEnv = [
         'sssm.sysname'  => 'required|alpha_numeric|min_length[3]' ,
         'app.baseURL'   => 'required|valid_url' ,
         'app.indexPage' => 'if_exist' ,
