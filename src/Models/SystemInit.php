@@ -1,4 +1,5 @@
 <?php
+/** @noinspection PhpUnused */
 /**
  * =============================================================================================
  *  Project: sssm
@@ -14,7 +15,6 @@ namespace Sssm\Install\Models;
 
 use CodeIgniter\Database\ConnectionInterface;
 use CodeIgniter\Model;
-use CodeIgniter\Router\Exceptions\RedirectException;
 use CodeIgniter\Validation\ValidationInterface;
 use Config\Services;
 use Exception;
@@ -145,9 +145,11 @@ _EOF_;
     public function __construct( ConnectionInterface &$db = null , ValidationInterface $validation = null ){
         parent::__construct( $db , $validation );
     
-        $this->checkEnvFiles = [
-            $this->envFile ,
-        ];
+        if( $this->envFile != '' ){
+            $this->checkEnvFiles = [
+                $this->envFile ,
+            ];
+        }
     
         $this->checkResult['writable_success'] = 0;
         $this->checkResult['writable'] = [];
@@ -236,8 +238,12 @@ _EOF_;
         return true;
     }
     
+    /**
+     * @throws Exception
+     */
     private function checkEnvVars(){
         try{
+            $validation = [];
             foreach( array_keys( $this->validationRulesEnv ) as $item ){
                 if( isset( $_ENV[$item] ) ){
                     $this->checkResult['checkEnvVarSet'][$item] = $this->OK;
@@ -257,6 +263,7 @@ _EOF_;
             
             $validation = Services::validation();
             //ドット区切りのNameは多次元配列に判断されてしまうので、エンティティに置換して判断する
+            $data = [];
             foreach( $this->validationRulesEnv as $field => $rules ){
                 $replaced_field = str_replace( '.' , '&#046;' , $field );
                 $data[$replaced_field] = $_ENV[$field] ?? null;
@@ -337,9 +344,10 @@ _EOF_;
     
     /**
      * .envファイルの書込
+     * @param bool $actual
      * @throws Exception
      */
-    public function save_env_file(){
+    public function save_env_file( $actual = false ){
         try{
             
             $_POST['baseURL'] = $_POST['baseURL'] ?? '';
@@ -349,7 +357,11 @@ _EOF_;
                 throw new Exception( "app.baseURL is required" );
             }
             
-            $contents = replace_kwd( self::envFileTemporaryTemplate , $_POST );
+            if( $actual ){
+                $contents = replace_kwd( self::envFileTemplate , $_POST );
+            }else{
+                $contents = replace_kwd( self::envFileTemporaryTemplate , $_POST );
+            }
             $contents = replace_kwd( $contents , [ 'supportedLocales' => $this->getArrayToEnvList( 'app.supportedLocales' , $_POST['supportedLocales'] ) ] , "@@" );
             
             file_put_contents( ROOTPATH . '.env' , $contents );
@@ -357,7 +369,6 @@ _EOF_;
             $this->checkResult['save_env_file'] = $this->OK;
             $this->checkResult['save_env_file_success'] = true;
         }catch( Exception $e ){
-            die( $e->getMessage() );
             $this->checkResult['save_env_file'] = $this->NG;
             $this->checkResult['save_env_file_success'] = false;
             $this->checkResult['save_env_file_message'] = $e->getMessage();
@@ -415,5 +426,6 @@ _EOF_;
         }
         return $ret;
     }
+    
     
 }
