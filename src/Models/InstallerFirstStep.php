@@ -18,7 +18,8 @@ class InstallerFirstStep {
     
     private const envFileTemplate =<<<_EOF_
 #--------------------------------------------------------------------
-# sssm Environment Configuration file
+# sssm Environment Configuration file 
+# Created by sssm.
 #--------------------------------------------------------------------
 
 #--------------------------------------------------------------------
@@ -38,6 +39,8 @@ sssm.login_pw_validation = '##sssm.login_pw_validation##'
 app.baseURL = '##app.baseURL##'
 app.indexPage = '##app.baseURL##'
 
+
+
 app.sessionDriver = '##app.sessionDriver##'
 app.sessionCookieName = 'sssm_session'
 app.sessionSavePath = 'z_sssm_sessions'
@@ -54,14 +57,6 @@ database.default.DBDriver = ##database.default.DBDriver##
 _EOF_;
 
     
-    private const envFileFirstTemplate =<<<_EOF_
-# Environment params build by sssm.
-CI_ENVIRONMENT = development
-app.baseURL = '##app.baseURL##'
-app.indexPage = '##app.baseURL##'
-
-_EOF_;
-
     public $defaultBaseUrl = '';
     
     public function __construct(){
