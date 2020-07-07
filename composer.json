@@ -17,6 +17,7 @@
         "smarty-gettext/smarty-gettext": "^1.6",
         "sarah-systems/ci4smarty": "*",
         "sarah-systems/sssm-base": "*",
+        "sarah-systems/sssm-module-installer": "*",
         "ext-gettext": "^7.3",
         "ext-intl": "*",
         "ext-mbstring": "*",

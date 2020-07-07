@@ -81,10 +81,13 @@ class SystemInit extends Model{
     
     public $validEnv = false;
     
+    public $catchedException;
+    
     private const envFileTemporaryTemplate =<<<_EOF_
 # Install temporary Environment params build by sssm.
 CI_ENVIRONMENT = development
 sssm.sysname = '##sysname##'
+sssm.module_ini_file = 'sssm_module.ini'
 app.baseURL = '##baseURL##'
 app.indexPage = '##indexPage##'
 app.defaultLocale = '##defaultLocale##'
@@ -105,39 +108,40 @@ _EOF_;
 
 CI_ENVIRONMENT = production
 
-sssm.sysname = '##sysname##'
-sssm.login_id_validation = '##login_id_validation##'
-sssm.login_pw_validation = '##login_pw_validation##'
+sssm.sysname = '##sssm.sysname##'
+sssm.module_ini_file = 'sssm_module.ini'
+sssm.login_id_validation = '##sssm.login_id_validation##'
+sssm.login_pw_validation = '##sssm.login_pw_validation##'
 
 #--------------------------------------------------------------------
 # APP
 #--------------------------------------------------------------------
 
-app.baseURL = '##baseURL##'
-app.indexPage = '##baseURL##'
+app.baseURL = '##app.baseURL##'
+app.indexPage = '##app.baseURL##'
 
-app.defaultLocale = '##defaultLocale##'
-app.negotiateLocale = ##negotiateLocale##
-@@supportedLocales@@
-app.appTimezone = '##appTimezone##'
+app.defaultLocale = '##app.defaultLocale##'
+app.negotiateLocale = ##app.negotiateLocale##
+@@app.supportedLocales@@
+app.appTimezone = '##app.appTimezone##'
 
-app.sessionDriver = '##sessionDriver##'
-app.sessionCookieName = 'sssm_session'
-app.sessionSavePath = 'z_sessions'
+app.sessionDriver = '##app.sessionDriver##'
+app.sessionCookieName = '##app.sessionCookieName##'
+app.sessionSavePath = '##app.sessionSavePath##'
 
 #--------------------------------------------------------------------
 # DATABASE
 #--------------------------------------------------------------------
 
-database.default.DBDriver = ##db_DBDriver##
-database.default.hostname = ##db_hostname##
-database.default.port = ##db_port##
-database.default.database = ##db_database##
-database.default.username = ##db_username##
-database.default.password = ##db_password##
-database.default.DBPrefix = ##db_DBPrefix##
-database.default.charset = ##db_charset##
-database.default.DBCollat = ##db_DBCollat##
+database.default.DBDriver = ##database.default.DBDriver##
+database.default.hostname = ##database.default.hostname##
+database.default.database = ##database.default.database##
+database.default.username = ##database.default.username##
+@@database.default.port@@
+@@database.default.password@@
+@@database.default.Prefix@@
+@@database.default.charset@@
+@@database.default.DBCollat@@
 _EOF_;
     
     
@@ -179,6 +183,7 @@ _EOF_;
             $this->checkDirectories = [
                 WRITEPATH ,
                 WRITEPATH . $_ENV['sssm.sysname'] ,
+                WRITEPATH . $_ENV['sssm.sysname'] . DIRECTORY_SEPARATOR . 'Modules' . DIRECTORY_SEPARATOR ,
                 WRITEPATH . $_ENV['sssm.sysname'] . DIRECTORY_SEPARATOR . 'Module_info' . DIRECTORY_SEPARATOR ,
                 WRITEPATH . $_ENV['sssm.sysname'] . DIRECTORY_SEPARATOR . 'Menus' . DIRECTORY_SEPARATOR ,
                 WRITEPATH . $_ENV['sssm.sysname'] . DIRECTORY_SEPARATOR . 'Installed' . DIRECTORY_SEPARATOR ,
@@ -270,7 +275,7 @@ _EOF_;
                 $validation->setRule( $replaced_field , null , $rules );
             }
             if( !$validation->run($data) ){
-                throw new Exception();
+                throw new Exception( 'Validation Error' );
             }
             $this->checkResult['checkEnvVars']['result'] = $this->OK;
             $this->checkResult['checkEnvVars']['message'] = [];
@@ -347,7 +352,7 @@ _EOF_;
      * @param bool $actual
      * @throws Exception
      */
-    public function save_env_file( $actual = false ){
+    public function saveEnvFile( $actual = false ){
         try{
             
             $_POST['baseURL'] = $_POST['baseURL'] ?? '';
@@ -358,11 +363,52 @@ _EOF_;
             }
             
             if( $actual ){
-                $contents = replace_kwd( self::envFileTemplate , $_POST );
+                $contents = replace_kwd( self::envFileTemplate , $_ENV );
+                $contents = replace_kwd(
+                    $contents ,
+                    [ 'app.supportedLocales' => $this->getArrayToEnvList( 'app.supportedLocales' , [] , 'app.supportedLocales' ) ] ,
+                    false ,
+                    "@@"
+                );
+                $contents = replace_kwd(
+                    $contents ,
+                    [ 'database.default.port' => $this->replaceEnvIfExists( 'database.default.port' , $_ENV['database.default.port'] ) ] ,
+                    false ,
+                    "@@"
+                );
+                $contents = replace_kwd(
+                    $contents ,
+                    [ 'database.default.password' => $this->replaceEnvIfExists( 'database.default.password' , $_ENV['database.default.password'] ) ] ,
+                    false ,
+                    "@@"
+                );
+                $contents = replace_kwd(
+                    $contents ,
+                    [ 'database.default.Prefix' => $this->replaceEnvIfExists( 'database.default.Prefix' , $_ENV['database.default.Prefix'] ) ] ,
+                    false ,
+                    "@@"
+                );
+                $contents = replace_kwd(
+                    $contents ,
+                    [ 'database.default.charset' => $this->replaceEnvIfExists( 'database.default.charset' , $_ENV['database.default.charset'] ) ] ,
+                    false ,
+                    "@@"
+                );
+                $contents = replace_kwd(
+                    $contents ,
+                    [ 'database.default.DBCollat' => $this->replaceEnvIfExists( 'database.default.DBCollat' , $_ENV['database.default.DBCollat'] ) ] ,
+                    false ,
+                    "@@"
+                );
             }else{
                 $contents = replace_kwd( self::envFileTemporaryTemplate , $_POST );
+                $contents = replace_kwd(
+                    $contents ,
+                    [ 'supportedLocales' => $this->getArrayToEnvList( 'app.supportedLocales' , $_POST['supportedLocales'] ) ] ,
+                    false ,
+                    "@@"
+                );
             }
-            $contents = replace_kwd( $contents , [ 'supportedLocales' => $this->getArrayToEnvList( 'app.supportedLocales' , $_POST['supportedLocales'] ) ] , "@@" );
             
             file_put_contents( ROOTPATH . '.env' , $contents );
     
@@ -375,9 +421,14 @@ _EOF_;
             throw $e;
         }
     }
-
-    private function getArrayToEnvList( $name , $data = [] ){
+    
+    protected function getArrayToEnvList( $name , $data = [] , $type_env = '' ){
         $ret = '';
+        
+        if( $type_env !== '' ){
+            $data = $this->convertEnvToArr( $type_env );
+        }
+        
         foreach( $data as $key => $value ){
             if( $value == '' ){
                 continue;
@@ -391,10 +442,42 @@ _EOF_;
                 $ret .= "{$name}.{$key} = '{$value}'\n";
             }
         }
-        return substr( $ret , 0 , -1 );
+        return mb_substr( $ret , 0 , -1 );
     }
     
-    private function getAllLocaleList(){
+    protected function replaceEnvIfExists( $name , $var , $quote = '' ){
+        if( $var != '' ){
+            return "{$name} = {$quote}{$var}{$quote}";
+        }
+        return '' ;
+    }
+    
+    
+    protected function convertEnvToArr( $kwd ){
+        $ret = [];
+        try{
+            if( !is_array( $_ENV ) ){
+                throw new Exception();
+            }
+            
+            $kwd_len = mb_strlen( $kwd );
+            
+            foreach( $_ENV as $key => $value ){
+                if( mb_substr( $key , 0 , $kwd_len ) !== $kwd ){
+                    continue;
+                }
+                $subj = mb_substr( $key , $kwd_len );
+                $ret[$subj] = $value;
+            }
+            
+        }catch( Exception $e ){
+            $ret = [];
+        }
+        
+        return $ret;
+    }
+    
+    protected function getAllLocaleList(){
     
         $ret = [];
         $availableLanguage = $this->getTranslationDirList();
@@ -411,7 +494,7 @@ _EOF_;
         return $ret;
     }
     
-    private function getTranslationDirList(){
+    protected function getTranslationDirList(){
         $ret=[];
         foreach( $this->languageDirs as $dir ){
             if( is_dir( $dir ) ){

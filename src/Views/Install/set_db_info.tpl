@@ -74,7 +74,7 @@
             </div>
 
             <div class="form-group gray">
-                <label for="db_charset">{t}database.default.DBCollat : データベースの照合順序{/t}</label>
+                <label for="db_DBCollat">{t}database.default.DBCollat : データベースの照合順序{/t}</label>
                 <input type="text" name="db_DBCollat" value="{$DATA->db_DBCollat}" class="form-control" id="db_DBCollat">
                 <small id="db_DBCollatHelp" class="form-text text-muted">{t}CI4環境変数のdatabase.default.DBCollatです。{/t}</small>
             </div>
@@ -83,7 +83,7 @@
                 <button type="submit" class="mt-3 btn btn-warning">{t}.envファイルにDB情報が追記されます{/t}</button>
             </div>
             <div class="form-group text-center">
-                <a href="{$smarty.server.SCRIPT_NAME}/Install/check_writable" class="mt-3 btn btn-primary">{t}DB情報の.envへの書込をスキップして次に進む（.envに正しいDB方法がない場合エラーが出ます）{/t}</a>
+                <a href="{$smarty.server.SCRIPT_NAME}/Install/create_base_tables" class="mt-3 btn btn-primary">{t}DB情報の.envへの書込をスキップして次に進む（.envに正しいDBアクセス方法がない場合エラーが出ます）{/t}</a>
             </div>
         </form>
     </div>
@@ -93,11 +93,7 @@
 {literal}
 $(function(){
   $("input"). keydown(function(e) {
-    if ((e.which && e.which === 13) || (e.keyCode && e.keyCode === 13)) {
-      return false;
-    } else {
-      return true;
-    }
+    return !((e.which && e.which === 13) || (e.keyCode && e.keyCode === 13));
   });
 });
 
@@ -106,13 +102,13 @@ $('.btnTest').click(function(event) {
   event.preventDefault();
 
   // 操作対象のフォーム要素を取得
-  var $form = $("#db_info_form");
+  let $form = $("#db_info_form");
 
   // 送信ボタンを取得
-  var $button = $form.find('button');
+  let $button = $form.find('button');
 
   // 押されたボタンのID取得
-  var id = $(this).attr('id');
+  let id = $(this).attr('id');
 
   // 送信
   $.ajax({
@@ -138,7 +134,7 @@ $('.btnTest').click(function(event) {
       // 入力値を初期化
       // $form[0].reset();
       //
-      if( result == 'true' ){
+      if( result === 'true' ){
         $("#"+id+"Spin").hide();
         $("#"+id+"Mes").removeClass("text-danger").addClass("text-success").html("{/literal}{t}✔{/t}{literal}").show();
       }else{
@@ -150,6 +146,8 @@ $('.btnTest').click(function(event) {
 
     // 通信失敗時の処理
     error: function(xhr, textStatus, error) {
+      $("#"+id+"Spin").hide();
+      $("#"+id+"Mes").removeClass("text-success").addClass("text-danger").html("{/literal}{t}✘{/t}{literal}").show();
       alert('Communication error.');
     }
   });

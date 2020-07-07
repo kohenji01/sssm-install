@@ -99,6 +99,7 @@ _modules/*
 # Jetbrains editors (PHPStorm, etc)
 .idea/
 *.iml
+dummy/
 
 # Netbeans
 nbproject/
